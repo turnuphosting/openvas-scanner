@@ -1,19 +1,7 @@
-/* Based on work Copyright (C) 2002 - 2004 Tenable Network Security
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
+ * SPDX-FileCopyrightText: 2002-2004 Tenable Network Security
  *
  * SPDX-License-Identifier: GPL-2.0-only
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #include "nasl_http.h"
@@ -111,7 +99,12 @@ _http_req (lex_ctxt *lexic, char *keyword)
       if (hostname == NULL)
         return NULL;
 
-      ua = g_strdup (user_agent_get (lexic->script_infos->ipc_context));
+      if ((user_agent_get (lexic->script_infos->ipc_context, &ua) == -2)
+          && !script_infos->standalone)
+        {
+          g_message ("Not possible to send the User Agent to the host process. "
+                     "Invalid IPC context");
+        }
       /* Servers should not have a problem with port 80 or 443 appended.
        * RFC2616 allows to omit the port in which case the default port for
        * that service is assumed.

@@ -1,19 +1,7 @@
-/* Based on work Copyright (C) 2002 - 2004 Tenable Network Security
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
+ * SPDX-FileCopyrightText: 2002-2004 Tenable Network Security
  *
  * SPDX-License-Identifier: GPL-2.0-only
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #include "nasl_init.h"
@@ -33,6 +21,7 @@
 #include "nasl_global_ctxt.h"
 #include "nasl_host.h"
 #include "nasl_http.h"
+#include "nasl_http2.h"
 #include "nasl_isotime.h"
 #include "nasl_lex_ctxt.h"
 #include "nasl_misc_funcs.h"
@@ -89,6 +78,7 @@ static init_func libfuncs[] = {
   {"script_xref", script_xref},
   {"script_tag", script_tag},
   {"vendor_version", nasl_vendor_version},
+  {"update_table_driven_lsc_data", nasl_update_table_driven_lsc_data},
   {"get_preference", nasl_get_preference},
   {"safe_checks", safe_checks},
   {"get_script_oid", get_script_oid},
@@ -131,6 +121,15 @@ static init_func libfuncs[] = {
   {"http_delete", http_delete},
   {"http_put", http_put},
   {"http_close_socket", http_close_socket},
+  {"http2_handle", nasl_http2_handle},
+  {"http2_get_response_code", nasl_http2_get_response_code},
+  {"http2_close_handle", nasl_http2_close_handle},
+  {"http2_set_custom_header", nasl_http2_set_custom_header},
+  {"http2_get", nasl_http2_get},
+  {"http2_head", nasl_http2_head},
+  {"http2_post", nasl_http2_post},
+  {"http2_delete", nasl_http2_delete},
+  {"http2_put", nasl_http2_put},
   {"add_host_name", add_hostname},
   {"get_host_name", get_hostname},
   {"get_host_names", get_hostnames},
@@ -357,8 +356,8 @@ static init_func libfuncs[] = {
   {"ssh_get_server_banner", nasl_ssh_get_server_banner},
   {"ssh_get_auth_methods", nasl_ssh_get_auth_methods},
   {"ssh_get_host_key", nasl_ssh_get_host_key},
+  {"ssh_execute_netconf_subsystem", nasl_ssh_execute_netconf_subsystem},
   {"sftp_enabled_check", nasl_sftp_enabled_check},
-
 #ifdef HAVE_LIBKSBA
   {"cert_open", nasl_cert_open},
   {"cert_close", nasl_cert_close},

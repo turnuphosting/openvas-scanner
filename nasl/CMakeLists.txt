@@ -1,20 +1,6 @@
-# Copyright (C) 2009-2022 Greenbone Networks GmbH
+# SPDX-FileCopyrightText: 2023 Greenbone AG
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 ## Config
 
@@ -40,7 +26,7 @@ pkg_check_modules (LIBSSH REQUIRED libssh>=0.6.0)
 
 set (KSBA_MIN_VERSION "1.0.7")
 # try with package config
-pkg_check_modules (KSBA REQUIRED ksba>=1.0.7)
+pkg_check_modules (KSBA ksba>=1.0.7)
 if (NOT KSBA_FOUND)
   # try with find library
   find_library (KSBA ksba)
@@ -84,42 +70,27 @@ if (NOT GPGME_FOUND)
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif (NOT GPGME_FOUND)
 
-message (STATUS "Looking for netsnmp...")
-find_library (SNMP netsnmp)
-message (STATUS "Looking for netsnmp... ${SNMP}")
-if (SNMP)
+if (BUILD_WITH_NETSNMP)
+  message (STATUS "Looking for netsnmp...")
+  find_library (NETSNMP netsnmp)
+  message (STATUS "Looking for netsnmp... ${NETSNMP}")
+else (BUILD_WITH_NETSNMP)
+  message (STATUS "Netsnmp support disabled")
+endif (BUILD_WITH_NETSNMP)
+if (NETSNMP)
   execute_process (COMMAND net-snmp-config --libs
     OUTPUT_VARIABLE SNMP_LDFLAGS
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif (SNMP)
+endif (NETSNMP)
 
 message (STATUS "Looking for libgcrypt...")
-find_library (GCRYPT gcrypt)
-message (STATUS "Looking for libgcrypt... ${GCRYPT}")
-if (NOT GCRYPT)
-  message (SEND_ERROR "The libgcrypt library is required.")
-else (NOT GCRYPT)
-  execute_process (COMMAND libgcrypt-config --libs
-    OUTPUT_VARIABLE GCRYPT_LDFLAGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process (COMMAND libgcrypt-config --cflags
-    OUTPUT_VARIABLE GCRYPT_CFLAGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process (COMMAND libgcrypt-config --version
-    OUTPUT_VARIABLE GCRYPT_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message (STATUS "  found libgcrypt, version ${GCRYPT_VERSION}")
-  if (GCRYPT_VERSION VERSION_LESS "1.6")
-    message (SEND_ERROR "libgcrypt 1.6 or greater is required")
-  endif (GCRYPT_VERSION VERSION_LESS "1.6")
-  string(REPLACE "-I" "" GCRYPT_INCLUDE_DIRS "${GCRYPT_CFLAGS}")
-endif (NOT GCRYPT)
+pkg_check_modules (GCRYPT REQUIRED libgcrypt)
 
 
 ## Library
-if (SNMP)
+if (NETSNMP)
   add_definitions (-DHAVE_NETSNMP)
-endif (SNMP)
+endif (NETSNMP)
 
 
 # The "-fno-strict-aliasing" silences warnings caused by macros defined in byteorder.h.
@@ -153,7 +124,7 @@ set (FILES arc4.c capture_packet.c charcnv.c exec.c genrand.c hmacmd5.c
      nasl_builtin_openvas_tcp_scanner.c nasl_builtin_synscan.c
      nasl_cmd_exec.c nasl_crypt_helper.c nasl_crypto2.c nasl_frame_forgery.c nasl_snmp.c nasl_ssh.c
      nasl_cert.c nasl_crypto.c nasl_debug.c nasl_func.c nasl_grammar.tab.c nasl_host.c
-     nasl_http.c nasl_init.c nasl_lex_ctxt.c nasl_misc_funcs.c nasl_scanner_glue.c
+     nasl_http.c nasl_http2.c nasl_init.c nasl_lex_ctxt.c nasl_misc_funcs.c nasl_scanner_glue.c
      nasl_packet_forgery.c nasl_packet_forgery_v6.c nasl_signature.c nasl_smb.c
      nasl_socket.c nasl_text_utils.c nasl_tree.c nasl_var.c nasl_wmi.c
      nasl_isotime.c ntlmssp.c smb_crypt.c smb_crypt2.c smb_signing.c time.c)
@@ -182,7 +153,7 @@ add_definitions (-DOPENVAS_GPG_BASE_DIR="${OPENVAS_GPG_BASE_DIR}")
 
 include_directories (${GLIB_INCLUDE_DIRS}
                      ${LIBOPENVAS_MISC_INCLUDE_DIRS}
-                     ${GLIB_JSON_INCLUDE_DIRS} 
+                     ${GLIB_JSON_INCLUDE_DIRS}
                      ${GPGME_INCLUDE_DIRS}
                      ${LIBSSH_INCLUDE_DIRS}
                      ${LIBGVM_BASE_INCLUDE_DIRS}
@@ -191,16 +162,16 @@ include_directories (${GLIB_INCLUDE_DIRS}
                      ${GCRYPT_INCLUDE_DIRS})
 
 
-# Build shared 
+# Build shared
 add_library (openvas_nasl_shared SHARED ${FILES})
 set_target_properties (openvas_nasl_shared PROPERTIES OUTPUT_NAME "openvas_nasl")
 set_target_properties (openvas_nasl_shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties (openvas_nasl_shared PROPERTIES SOVERSION "${PROJECT_VERSION_MAJOR}")
 set_target_properties (openvas_nasl_shared PROPERTIES VERSION "${PROJECT_VERSION_STRING}")
 # line below is needed so it also works with no-undefined which is e.g. used by Mandriva
-target_link_libraries (openvas_nasl_shared openvas_misc_shared ${GLIB_LDFLAGS}
+target_link_libraries (openvas_nasl_shared openvas_misc_shared curl pcap ${GLIB_LDFLAGS}
                          ${LIBOPENVAS_MISC_LDFLAGS}
-                         ${GLIB_JSON_LDFLAGS} 
+                         ${GLIB_JSON_LDFLAGS}
                          ${GCRYPT_LDFLAGS} ${GPGME_LDFLAGS} m
                          ${LIBGVM_BASE_LDFLAGS}
                          ${LIBGVM_UTIL_LDFLAGS}
@@ -229,5 +200,5 @@ install (FILES ${CMAKE_SOURCE_DIR}/doc/man/openvas-nasl.1
          DESTINATION ${DATADIR}/man/man1 )
 
 install (FILES ${CMAKE_SOURCE_DIR}/doc/man/openvas-nasl-lint.1
-         DESTINATION ${DATADIR}/man/man1 )   
+         DESTINATION ${DATADIR}/man/man1 )
 ## End

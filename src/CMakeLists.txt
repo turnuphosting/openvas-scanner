@@ -1,20 +1,6 @@
-# Copyright (C) 2011-2022 Greenbone Networks GmbH
+# SPDX-FileCopyrightText: 2023 Greenbone AG
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 
 ## Program
 
@@ -33,26 +19,7 @@ pkg_check_modules (GLIB REQUIRED glib-2.0>=2.42)
 pkg_check_modules (LIBBSD REQUIRED libbsd)
 
 message (STATUS "Looking for libgcrypt...")
-find_library (GCRYPT gcrypt)
-if (NOT GCRYPT)
-  message (SEND_ERROR "The libgcrypt library is required.")
-else (NOT GCRYPT)
-  message (STATUS "Looking for libgcrypt... ${GCRYPT}")
-  execute_process (COMMAND libgcrypt-config --libs
-    OUTPUT_VARIABLE GCRYPT_LDFLAGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process (COMMAND libgcrypt-config --cflags
-    OUTPUT_VARIABLE GCRYPT_CFLAGS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process (COMMAND libgcrypt-config --version
-    OUTPUT_VARIABLE GCRYPT_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message (STATUS "  found libgcrypt, version ${GCRYPT_VERSION}")
-  if (GCRYPT_VERSION VERSION_LESS "1.6")
-    message (SEND_ERROR "libgcrypt 1.6 or greater is required")
-  endif (GCRYPT_VERSION VERSION_LESS "1.6")
-  string(REPLACE "-I" "" GCRYPT_INCLUDE_DIRS "${GCRYPT_CFLAGS}")
-endif (NOT GCRYPT)
+pkg_check_modules (GCRYPT REQUIRED libgcrypt)
 
 message (STATUS "Looking for pcap...")
 find_library (PCAP pcap)
@@ -234,17 +201,8 @@ install (TARGETS openvas
 install (FILES ${CMAKE_BINARY_DIR}/src/openvas_log.conf
          DESTINATION ${OPENVAS_SYSCONF_DIR})
 
-install (FILES ${CMAKE_BINARY_DIR}/tools/greenbone-nvt-sync
-         DESTINATION ${BINDIR}
-         PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
-                     GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
 install (FILES ${CMAKE_BINARY_DIR}/doc/man/openvas.8
-                     DESTINATION ${DATADIR}/man/man8 )
-            
-            
-install (FILES ${CMAKE_SOURCE_DIR}/doc/man/greenbone-nvt-sync.8
-                     DESTINATION ${DATADIR}/man/man8 )
+         DESTINATION ${DATADIR}/man/man8 )
 
 install (DIRECTORY DESTINATION ${OPENVAS_NVT_DIR})
 

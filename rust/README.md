@@ -1,4 +1,13 @@
-# Implementation of Network Attack Scripting Language
+# Rust Scanner implementation
+
+This is the rust scanner implementation with the goal to replace the current scanner stack
+(openvas-scanner, ospd-openvas, notus-scanner), including the Open Scanner Protocol (OSP). The rust implementation of the new [HTTP scanner API](https://greenbone.github.io/scanner-api/) is called
+**openvasd**. It provides an interface to manage scans for vulnerability testing. It currently utilizes the **openvas-scanner** to perform tasks.
+
+This project also consist of a collection of tools called [**scannerctl**](scannerctl/README.md). It contains variety of utilities for different tasks. For more information look into [**scannerctl**](scannerctl/README.md).
+
+
+# Implementation of the NASL Attack Scripting Language
 
 The goal is to have rust based implementation of NASL.
 
@@ -8,41 +17,37 @@ The decision to rewrite certain parts in rust was mainly to have an easier way t
 
 The implementation is split into multiple parts that are reflected in the directory layout.
 
-The core parts are:
 
-- [nasl-syntax](./nasl-syntax/) - to tokenize a NASL script and return `Statements`
-- [storage](./storage/) - a storage abstraction used to implement multiple storage solutions.
-- [nasl-interpreter](./nasl-interpreter/) - to execute the `Statements` by also utilizing `storage`
-- [feed](./feed) - a feed related abstraction for a front end (e.g. `nasl-cli`).
+# Requirements
 
-Additional implementation:
-- [redis-storage](./redis-storage/) - a `ospd-openvas` compatible redis implementation of `storage`.
-- [nasl-cli](./nasl-cli/) - a CLI front end for the NASL implementation.
+- rust toolchain
 
-Tests:
-- [feed-verifier](./feed-verifier) - verifies that the feed update functionality is comparable with `openvas -u` and that `nasl-cli feed update` is faster than `openvas -u`.
+Additionally for the features defined as experimental you need:
 
-# Architecture Overview
+- libpcap
+- openssl
+- pkg-config
+- zlib
 
-The architecture is a layered architecture to make it easy to extend or modify it.
+# Build
 
-This is done by providing specialized crates by task and abstraction of data base technologies and business logic.
+To build and create the executables
 
-It roughly follows the pattern of:
+- scannerctl
+- openvasd
 
-```text
-Frontend (e.g. nasl-cli) -> 
-specialized task (e.g. feed/update) ->
-interpreter ->
-storage ->
-storage specific implementation (e.g. redis-storage)
+You have to execute
+```
+cargo build --release
 ```
 
-## Requirements
+To enable the experimental features:
 
-Currently only `cargo` within `rust-toolchain` is required.
+```
+cargo build -F experimental --release
+```
 
-## Contribution
+# Contribution
 
 If you are unsure how to start or want to discuss an improvement or feature feel free to create an issue.
 
@@ -57,11 +62,29 @@ Additionally we want to:
 
 - do improvements in the built in function handling as we want to be more modular
 - clean up the storage interface as it is very misleading currently because it enforced implementations of retrieve and dispatch.
-- extend `nasl-cli` with a `openvas-nasl` like functionality so that we can test scripts
+- extend `scannerctl` with a `openvas-nasl` like functionality so that we can test scripts
 - implement multithreading of interpreter
 - implement scheduling for a multi script run
 - create an http frontend based on [OpenAPI definition](./doc/openapi.yml)
 
-## Current status
+# Structure of the code
+The codebase is structured roughly as follows:
+- `nasl`: Contains the NASL syntax, interpreter and builtin functions.
+- `nasl/syntax`: Definition of the NASL syntax.
+- `nasl/interpreter`: The NASL language interpreter.
+- `nasl/utils`: Utilities to make working with the NASL interpreter and implementing new builtin functions easier.
+- `nasl/builtin`: The builtin NASL functions. This is divided into submodules depending on the functionality (i.e. `string`, `ssh`, `http`, ...).
+- `storage`: Implementation of the different methods to store scan results. This contains code that is relevant to all storage types, as well as submodules containing the code of the individual storage types.
+- `scanner`: Implementation of the `openvasd` scanner type.
+- `feed`: Functionality to perform feed verification and updates.
+- `models`: Defines types that are commonly used throughout the codebase.
+- ..
 
-This is an very early status and not yet in a stable condition.
+Integration with existing implementations is done in `openvas` and `osp`.
+
+This crate provides two binaries: `openvasd`, which is the main executable and `scannerctl`, which is used for performing quick tests of NASL functionality and has many other utility functions.
+
+
+# Current status
+
+The programs openvasd and scannerctl are usable, but might not support all features yet. The current openvasd implementation does not use and internal rust scanner yet, but still uses the c implementation of the openvas-scanner. Additionally depending on the configuration, an ospd-openvas instance is also needed.

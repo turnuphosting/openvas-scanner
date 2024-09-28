@@ -1,20 +1,7 @@
-/* Portions Copyright (C) 2009-2022 Greenbone Networks GmbH
- * Based on work Copyright (C) 2002 - 2005 Tenable Network Security
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
+ * SPDX-FileCopyrightText: 2002-2005 Tenable Network Security
  *
  * SPDX-License-Identifier: GPL-2.0-only
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
@@ -240,7 +227,7 @@ main (int argc, char **argv)
       else
         putchar ('\n');
       printf ("Copyright (C) 2002 - 2004 Tenable Network Security\n");
-      printf ("Copyright (C) 2022 Greenbone Networks GmbH\n\n");
+      printf ("Copyright (C) 2024 Greenbone AG\n\n");
       exit (0);
     }
   if (nasl_debug)
@@ -343,6 +330,7 @@ main (int argc, char **argv)
       struct in6_addr ip6;
       kb_t kb;
       int rc;
+      int process_id;
 
       if (prefs_get_bool ("expand_vhosts"))
         gvm_host_add_reverse_lookup (host);
@@ -354,6 +342,8 @@ main (int argc, char **argv)
         exit (1);
 
       set_main_kb (kb);
+      process_id = getpid ();
+
       script_infos = init (&ip6, host->vhosts, kb);
       for (int i = 0; nasl_filenames[i] != NULL; i++)
         {
@@ -396,9 +386,13 @@ main (int argc, char **argv)
 
           if (exec_nasl_script (script_infos, mode) < 0)
             err++;
+
+          if (process_id != getpid ())
+            exit (0);
         }
       g_free (script_infos->globals);
       g_free (script_infos);
+
       kb_delete (kb);
     }
 

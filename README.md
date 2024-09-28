@@ -3,10 +3,9 @@
 # OpenVAS Scanner
 
 [![GitHub releases](https://img.shields.io/github/release/greenbone/openvas-scanner.svg)](https://github.com/greenbone/openvas-scanner/releases)
-[![Code Documentation Coverage](https://img.shields.io/codecov/c/github/greenbone/openvas-scanner.svg?label=Doc%20Coverage&logo=codecov)](https://codecov.io/gh/greenbone/openvas-scanner)
 [![Docker Pulls](https://img.shields.io/docker/pulls/greenbone/openvas-scanner.svg)](https://hub.docker.com/r/greenbone/openvas-scanner/)
 [![Docker Image Size](https://img.shields.io/docker/image-size/greenbone/openvas-scanner.svg?maxAge=2592000)](https://hub.docker.com/r/greenbone/openvas-scanner/)
-[![Build and test](https://github.com/greenbone/openvas-scanner/actions/workflows/ci-c.yml/badge.svg?branch=main)](https://github.com/greenbone/openvas-scanner/actions/workflows/ci-c.yml?query=branch%3Amain++)
+[![CI](https://github.com/greenbone/openvas-scanner/actions/workflows/control.yml/badge.svg?branch=main)](https://github.com/greenbone/openvas-scanner/actions/workflows/control.yml?query=branch%3Amain)
 
 This is the OpenVAS Scanner of the Greenbone Community Edition.
 
@@ -37,6 +36,12 @@ that you use the Greenbone Enterprise TRIAL, a prepared virtual
 machine with a readily available setup. Information regarding the virtual machine
 is available at <https://www.greenbone.net/en/testnow>.
 
+## Rust Implementation
+
+This repository also consists of a [rust project](rust/README.md) aiming to replace the current scanner stack
+(openvas-scanner, ospd-openvas, notus-scanner). It simplifies the use of the scanner and centralizes
+everything needed for scanning. Currently it uses the openvas-scanner as scan engine.
+
 ## Docker, [Greenbone Community Containers](https://greenbone.github.io/docs/latest/22.4/container/)
 
 If you want to use the docker files provided in this repository you can pull them 
@@ -64,18 +69,20 @@ issue to the Greenbone Support Portal.
 
 ## Maintainer
 
-This project is maintained by [Greenbone Networks GmbH](https://www.greenbone.net/).
+This project is maintained by [Greenbone AG](https://www.greenbone.net/).
 
 ## Contributing
 
 Your contributions are highly appreciated. Please [create a pull
-request](https://github.com/greenbone/openvas-scanner/pulls) on GitHub. Bigger
-changes need to be discussed with the development team via the [issues section
-at GitHub](https://github.com/greenbone/openvas-scanner/issues) first.
+request](https://github.com/greenbone/openvas-scanner/pulls) on GitHub.
+Remember to commit the contribution agreement as explained in [RELICENSING](https://github.com/greenbone/openvas-scanner/tree/main/RELICENSE) folder with your first PR.
+Bigger changes should be discussed with the development team via the [issues section at GitHub](https://github.com/greenbone/openvas-scanner/issues) first.
 
 ## License
 
-This module is licensed under the [GNU General Public License v2.0
-only](COPYING). Single files, however, are licensed either the GNU General
-Public License v2.0 only or under GNU General Public License v2.0 or later,
-please see the [license-details.md](license-details.md) file for details.
+This repository consists of two scanner implementation, one in programming language C and one in programming language Rust.
+
+This module except for the Rust-implementation in directory rust/ is licensed under the GNU General Public License v2.0 only. Single files, however, are licensed either under the GNU General Public License v2.0 only or under GNU General Public License v2.0 or later, please see the [license-details.md](license-details.md) file for details.
+
+The Rust-implementation in directory rust/ is licensed under the GNU General Public License v2.0 or later with OpenSSL exception. Single files, however, are additionally licensed under MIT.
+

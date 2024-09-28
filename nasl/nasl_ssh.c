@@ -1,20 +1,6 @@
-/* Portions Copyright (C) 2011-2022 Greenbone Networks GmbH
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
@@ -2053,5 +2039,66 @@ write_ret:
 
   retc = alloc_typed_cell (CONST_INT);
   retc->x.i_val = rc;
+  return retc;
+}
+
+/*
+ * NASL NETCONF
+ */
+/**
+ * @brief Excecute the NETCONF subsystem on the the ssh channel
+ *
+ * @naslfn{ssh_execute_netconf_subsystem}
+ * @nasluparam
+ * - An SSH session id.
+ * @naslret An int on success or NULL on error.
+ *
+ * @param[in] lexic Lexical context of NASL interpreter.
+ * @return Session ID on success, NULL on failure.
+ */
+tree_cell *
+nasl_ssh_execute_netconf_subsystem (lex_ctxt *lexic)
+{
+  int tbl_slot, session_id;
+  ssh_channel channel;
+  ssh_session session;
+  tree_cell *retc;
+
+  session_id = get_int_var_by_num (lexic, 0, -1);
+
+  if (!verify_session_id (session_id, "ssh_execute_netconf_subsystem",
+                          &tbl_slot, lexic))
+    return NULL;
+  session = session_table[tbl_slot].session;
+  channel = ssh_channel_new (session);
+  if (!channel)
+    return NULL;
+
+  if (ssh_channel_open_session (channel))
+    {
+      /* FIXME: Handle SSH_AGAIN.  */
+      g_message ("ssh_channel_open_session failed: %s",
+                 ssh_get_error (session));
+      ssh_channel_free (channel);
+      retc = alloc_typed_cell (CONST_INT);
+      retc->x.i_val = SSH_ERROR;
+      return retc;
+    }
+
+  int err;
+  if ((err = ssh_channel_request_subsystem (channel, "netconf")) < 0)
+    {
+      g_message ("%s Could not execute netconf subsystem", __func__);
+      retc = alloc_typed_cell (CONST_INT);
+      retc->x.i_val = err;
+      return retc;
+    }
+
+  if (session_table[tbl_slot].channel)
+    ssh_channel_free (session_table[tbl_slot].channel);
+  session_table[tbl_slot].channel = channel;
+
+  retc = alloc_typed_cell (CONST_INT);
+  retc->x.i_val = session_table[tbl_slot].session_id;
   return retc;
 }

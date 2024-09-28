@@ -1,21 +1,8 @@
-/* Portions Copyright (C) 2009-2022 Greenbone Networks GmbH
- * Portions Copyright (C) 2006 Software in the Public Interest, Inc.
- * Based on work Copyright (C) 1998 - 2006 Tenable Network Security, Inc.
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
+ * SPDX-FileCopyrightText: 2006 Software in the Public Interest, Inc.
+ * SPDX-FileCopyrightText: 1998-2006 Tenable Network Security, Inc.
  *
  * SPDX-License-Identifier: GPL-2.0-only
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
@@ -423,6 +410,7 @@ static int
 attack_network_init (struct scan_globals *globals, const gchar *config_file)
 {
   const char *mqtt_server_uri;
+  const char *openvasd_server_uri;
 
   set_default_openvas_prefs ();
   prefs_config (config_file);
@@ -443,20 +431,41 @@ attack_network_init (struct scan_globals *globals, const gchar *config_file)
     }
   nvticache_reset ();
 
-  /* Init MQTT communication */
-  mqtt_server_uri = prefs_get ("mqtt_server_uri");
-  if (mqtt_server_uri)
+  /* Init Notus communication */
+  openvasd_server_uri = prefs_get ("openvasd_server");
+  if (openvasd_server_uri)
     {
-      if ((mqtt_init (mqtt_server_uri)) != 0)
+      g_message ("%s: LSC via openvasd", __func__);
+      prefs_set ("openvasd_lsc_enabled", "yes");
+    }
+  else
+    {
+      mqtt_server_uri = prefs_get ("mqtt_server_uri");
+      if (mqtt_server_uri)
         {
-          g_message ("%s: INIT MQTT: FAIL", __func__);
-          send_message_to_client_and_finish_scan (
-            "ERRMSG||| ||| ||| ||| |||MQTT initialization failed");
+#ifdef AUTH_MQTT
+          const char *mqtt_user = prefs_get ("mqtt_user");
+          const char *mqtt_pass = prefs_get ("mqtt_pass");
+          if ((mqtt_init_auth (mqtt_server_uri, mqtt_user, mqtt_pass)) != 0)
+#else
+          if ((mqtt_init (mqtt_server_uri)) != 0)
+#endif
+            {
+              g_message ("%s: INIT MQTT: FAIL", __func__);
+              send_message_to_client_and_finish_scan (
+                "ERRMSG||| ||| ||| ||| |||MQTT initialization failed");
+            }
+          else
+            {
+              g_message ("%s: INIT MQTT: SUCCESS", __func__);
+              prefs_set ("mqtt_enabled", "yes");
+            }
         }
       else
         {
-          g_message ("%s: INIT MQTT: SUCCESS", __func__);
-          prefs_set ("mqtt_enabled", "yes");
+          g_message ("%s: Neither openvasd_server nor mqtt_server_uri given, "
+                     "LSC disabled",
+                     __func__);
         }
     }
 
@@ -542,7 +551,7 @@ openvas (int argc, char *argv[], char *env[])
       printf ("GIT revision %s\n", OPENVAS_GIT_REVISION);
 #endif
       printf ("gvm-libs %s\n", gvm_libs_version ());
-      printf ("Most new code since 2005: (C) 2022 Greenbone Networks GmbH\n");
+      printf ("Most new code since 2005: (C) 2024 Greenbone AG\n");
       printf (
         "Nessus origin: (C) 2004 Renaud Deraison <deraison@nessus.org>\n");
       printf ("License GPLv2: GNU GPL version 2\n");
@@ -616,6 +625,7 @@ openvas (int argc, char *argv[], char *env[])
   /* openvas --scan-start */
   if (scan_id)
     {
+      int attack_error = 0;
       struct scan_globals *globals;
       set_scan_id (g_strdup (scan_id));
       globals = g_malloc0 (sizeof (struct scan_globals));
@@ -626,13 +636,19 @@ openvas (int argc, char *argv[], char *env[])
           destroy_scan_globals (globals);
           return EXIT_FAILURE;
         }
-      attack_network (globals);
+      attack_error = attack_network (globals);
 
       gvm_close_sentry ();
       destroy_scan_globals (globals);
 #ifdef LOG_REFERENCES_AVAILABLE
       free_log_reference ();
 #endif // LOG_REFERENCES_AVAILABLE
+
+      if (attack_error)
+        {
+          g_warning ("Scan ending with FAILURE status");
+          return EXIT_FAILURE;
+        }
       return EXIT_SUCCESS;
     }
 

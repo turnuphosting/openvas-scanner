@@ -166,7 +166,7 @@ checks_read_timeout
 
 timeout_retry
 
-:   Number of retries when a socket connection attempt timesout.
+:   Number of retries when a socket connection attempt times out.
 
 open_sock_max_attempts
 
@@ -202,7 +202,7 @@ non_simult_ports
     connections at the same time coming from the same host. This option
     allows you to prevent openvas to make two connections on the same
     given ports at the same time. The syntax of this option is
-    \"port1\[, port2\....\]\". Note that you can use the KB notation of
+    \"port1\[, port2\...\]\". Note that you can use the KB notation of
     openvas to designate a service formally. Ex: \"139, Services/www\",
     will prevent openvas from making two connections at the same time on
     port 139 and on every port which hosts a web server.
@@ -374,7 +374,7 @@ the amount of data to be transferred significantly.
 ## SEE ALSO
 
 **gvmd(8)**, **gsad(8)**, **ospd-openvas(8)**, **[openvas-nasl(1)](../nasl/openvas-nasl.md)**,
-**[openvas-nasl-lint(1)](../nasl/openvas-nasl-lint.md)**, **[greenbone-nvt-sync(1)](../greenbone-nvt-sync.md)**
+**[openvas-nasl-lint(1)](../nasl/openvas-nasl-lint.md)**
 
 ## MORE INFORMATION
 
@@ -389,4 +389,4 @@ are:
 
 openvas was forked from nessusd in 2005. Nessusd was written by Renaud
 Deraison \<deraison@cvs.nessus.org\>. Most new code since 2005 developed
-by Greenbone Networks GmbH.
+by Greenbone AG.

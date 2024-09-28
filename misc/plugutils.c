@@ -1,21 +1,7 @@
-/* Portions Copyright (C) 2009-2022 Greenbone Networks GmbH
- * Based on work Copyright (C) 1998 - 2003 Renaud Deraison
+/* SPDX-FileCopyrightText: 2023 Greenbone AG
+ * SPDX-FileCopyrightText: 1998-2003 Renaud Deraison
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
@@ -277,6 +263,12 @@ plug_get_host_fqdn (struct script_infos *args)
         return NULL;
       vhosts = vhosts->next;
     }
+
+  // Allow to return to the main process if parent process is openvas-nasl.
+  // So, the main process can do e.g. a kb clean up
+  if (args->standalone)
+    return NULL;
+
   _exit (0);
 }
 
@@ -1072,9 +1064,10 @@ plug_get_kb (struct script_infos *args)
 }
 
 static void
-plug_get_key_sigchld ()
+plug_get_key_sigchld (int s)
 {
   int status;
+  (void) s;
 
   wait (&status);
 }
@@ -1220,6 +1213,12 @@ plug_get_key (struct script_infos *args, char *name, int *type, size_t *len,
       res = res->next;
     }
   kb_item_free (res_list);
+
+  // Allow to return to the main process if parent process is openvas-nasl.
+  // So, the main process can do e.g. a kb clean up
+  if (args->standalone)
+    return NULL;
+
   _exit (0);
 }
 
